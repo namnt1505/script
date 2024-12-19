@@ -1,0 +1,39 @@
+#!/bin/zsh
+
+# Check if AWS config directory exists
+if [ ! -d ~/.aws ]; then
+    echo "AWS configuration directory not found. Please configure AWS CLI first."
+    exit 1
+fi
+
+# List profiles from the AWS config file
+profiles=($(aws configure list-profiles))
+
+if [ -z "$profiles" ]; then
+    echo "No AWS profiles found. Please create a profile first."
+    exit 1
+fi
+
+# Display the profiles
+echo "Available AWS Profiles:"
+select profile in "${profiles[@]}"; do
+   if [[ -n "$profile" ]]; then
+        # Set the AWS_PROFILE environment variable
+        export AWS_PROFILE="$profile"
+
+        if grep -q "AWS_PROFILE=" ~/.zshrc; then
+            # Replace the existing line
+            sed -i.bak "s|export AWS_PROFILE=.*|export AWS_PROFILE=\"$AWS_PROFILE\"|" ~/.zshrc
+       else
+            # Append the line if it doesn't exist
+            echo "export AWS_PROFILE=\"$AWS_PROFILE\"" >> ~/.zshrc
+        fi
+        # Reload the shell profile
+        source ~/.zshrc
+
+        echo "AWS profile set to $AWS_PROFILE"
+        break
+    else
+        echo "Invalid selection. Please try again."
+    fi
+done
